@@ -202,13 +202,14 @@ case class KafkaSourceConfigEntry(override val category: SourceCategory.Value,
                                   override val intervalSeconds: Int,
                                   server: String,
                                   topic: String,
+                                  schema: String,
                                   startingOffsets: String,
                                   maxOffsetsPerTrigger: Option[Long] = None)
     extends StreamingDataSourceConfigEntry {
-  require(server.trim.nonEmpty && topic.trim.nonEmpty)
+  require(server.trim.nonEmpty && topic.trim.nonEmpty && schema.trim.nonEmpty)
 
   override def toString: String = {
-    s"Kafka source server: ${server} topic:${topic} startingOffsets:${startingOffsets} maxOffsetsPerTrigger:${maxOffsetsPerTrigger}"
+    s"Kafka source server: ${server} topic:${topic} schema: ${schema} startingOffsets:${startingOffsets} maxOffsetsPerTrigger:${maxOffsetsPerTrigger}"
   }
 }
 

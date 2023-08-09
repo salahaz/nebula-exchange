@@ -8,6 +8,8 @@ package com.vesoft.nebula.exchange.reader
 import com.vesoft.exchange.common.config.{KafkaSourceConfigEntry, PulsarSourceConfigEntry}
 import org.apache.spark.sql.types.StringType
 import org.apache.spark.sql.{DataFrame, SparkSession}
+import java.nio.file.{Files, Paths}
+import org.apache.spark.sql.avro.functions.{from_avro}
 
 /**
   * Spark Streaming
@@ -50,11 +52,13 @@ class KafkaReader(override val session: SparkSession,
     if (maxOffsetsPerTrigger.isDefined)
       reader.option("maxOffsetsPerTrigger", maxOffsetsPerTrigger.get)
 
+    val schema = new String(Files.readAllBytes(Paths.get(kafkaConfig.schema)))
+
     reader
       .load()
-      .select($"value".cast(StringType))
-      .select(json_tuple($"value", fields: _*))
-      .toDF(fields: _*)
+      .select($"key".cast(StringType), from_avro($"value", schema).as("value"))
+      .select("key", "value.*")
+      .toDF()
 
   }
 }

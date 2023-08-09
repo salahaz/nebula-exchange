@@ -862,6 +862,7 @@ object Configs {
                                intervalSeconds,
                                config.getString("service"),
                                config.getString("topic"),
+                               config.getString("schema"),
                                startingOffsets,
                                maxOffsetsPerTrigger)
       case SourceCategory.PULSAR =>
