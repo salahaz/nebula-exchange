@@ -22,6 +22,8 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.collection.JavaConverters._
 import scala.util.control.Breaks.break
+import org.apache.spark.{SparkConf, SparkContext}
+
 
 object Type extends Enumeration {
   type Type = Value
@@ -291,6 +293,25 @@ object Configs {
     if (configPath.startsWith("hdfs://")) {
       val hadoopConfig: Configuration = new Configuration()
       val fs: FileSystem              = org.apache.hadoop.fs.FileSystem.get(hadoopConfig)
+      val file: FSDataInputStream     = fs.open(new Path(configPath))
+      val reader                      = new InputStreamReader(file)
+      config = ConfigFactory.parseReader(reader)
+    } else if (configPath.startsWith("s3a://")){
+      val sc = new SparkContext(new SparkConf())
+      val hadoopConfig: Configuration = new Configuration()
+
+      hadoopConfig.set("fs.s3a.committer.name", "directory")
+      hadoopConfig.set("fs.s3a.committer.staging.tmp.path", "/tmp/spark_staging")
+      hadoopConfig.set("fs.s3a.buffer.dir", "/tmp/spark_local_buf")
+      hadoopConfig.set("fs.s3a.committer.staging.conflict-mode", "fail")
+      hadoopConfig.set("fs.s3a.path.style.access", "true")
+      hadoopConfig.set("fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem")
+      hadoopConfig.set("fs.s3a.attempts.maximum", "0")
+      hadoopConfig.set("fs.s3a.endpoint", sc.getConf.get("spark.hadoop.fs.s3a.endpoint"))
+      hadoopConfig.set("fs.s3a.access.key", sc.getConf.get("spark.hadoop.fs.s3a.access.key"))
+      hadoopConfig.set("fs.s3a.secret.key", sc.getConf.get("spark.hadoop.fs.s3a.secret.key"))
+
+      val fs: FileSystem              = org.apache.hadoop.fs.FileSystem.get(new java.net.URI(configPath), hadoopConfig)
       val file: FSDataInputStream     = fs.open(new Path(configPath))
       val reader                      = new InputStreamReader(file)
       config = ConfigFactory.parseReader(reader)
